@@ -1,0 +1,131 @@
+# ArduinoProject1
+// This is the main code used in my summer Arduino project. 
+
+// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+#include "RTClib.h"
+
+RTC_DS3231 rtc;
+
+void setup () {
+  Serial.begin(9600);
+  pinMode(0, OUTPUT);
+  pinMode(1, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(7, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(A0, OUTPUT);
+
+#ifndef ESP8266
+  while (!Serial); // wait for serial port to connect. Needed for native USB
+#endif
+
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    Serial.flush();
+    abort();
+  }
+
+  if (rtc.lostPower()) {
+    Serial.println("RTC lost power, let's set the time!");
+    // When time needs to be set on a new device, or after a power loss, the
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
+
+  // When time needs to be re-set on a previously configured device, the
+  // following line sets the RTC to the date & time this sketch was compiled
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // This line sets the RTC with an explicit date & time, for example to set
+  // January 21, 2014 at 3am you would call:
+  // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+}
+
+int firstDigit(int x) { //We're working with a clock. It's necessary to split the time (a single number) into four numbers (hours/mins and tens of hours/mins) 
+  if (x > 9) {
+    while (x > 9) {
+        x /= 10;
+    return x;
+    }
+  }
+  else {
+    return 0;
+  }
+}
+
+int secondDigit(int y, int q) {
+    while (y > 9) {
+        q /= 10;
+        q *= 10;
+        y -= q;
+    }
+    return y;    
+}
+  
+  void flicker(int A, int B, int C, int D){ //This function is necessary because of the clock's circuit configuration. To not cause blurring, only one digit can be on at once.
+  digitalWrite(A, HIGH);
+  digitalWrite(10, HIGH);
+  delay(5);
+  clearall();
+  delay(5);
+  digitalWrite(B, HIGH);
+  digitalWrite(11, HIGH);
+  delay(5);
+  clearall();
+  delay(5);
+  digitalWrite(C, HIGH);
+  digitalWrite(12, HIGH);
+  delay(5);
+  clearall();
+  delay(5);
+  digitalWrite(D, HIGH);
+  digitalWrite(A0, HIGH);
+  delay(5);
+  clearall();
+  delay(5);
+}
+
+void clearall() {
+      digitalWrite(0, LOW);
+      digitalWrite(1, LOW);
+      digitalWrite(2, LOW);
+      digitalWrite(3, LOW);
+      digitalWrite(4, LOW);
+      digitalWrite(5, LOW);
+      digitalWrite(6, LOW);
+      digitalWrite(7, LOW);
+      digitalWrite(8, LOW);
+      digitalWrite(9, LOW);
+      digitalWrite(10, LOW);
+      digitalWrite(11, LOW);
+      digitalWrite(12, LOW);
+      digitalWrite(A0, LOW);
+    }  
+void loop () {
+
+    DateTime now = rtc.now();
+
+    int hourvalue = (now.hour());
+    int minutevalue = (now.minute());
+    int hourLH = firstDigit(hourvalue);
+    int hourRH = secondDigit(hourvalue, hourvalue);
+    int minuteLH = firstDigit(minutevalue);
+    int minuteRH = secondDigit(minutevalue, minutevalue);
+    Serial.print(hourLH);
+    Serial.print(hourRH);
+    Serial.print(":");
+    Serial.print(minuteLH);
+    Serial.print(minuteRH);
+    
+    flicker(minuteRH, hourRH, minuteLH, hourLH);
+}
